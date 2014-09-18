@@ -1,0 +1,107 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{a4paper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{Information Security Course Project Design Document}
+\author{Gan Yue 11300180158}
+%\date{}                                           % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+\section{Design}
+\subsection{Registration}
+The process is as follows:
+\begin{enumerate}
+\item After establishing connection, the client sends its identity (e.g. email address) to server.
+\item Then we exchange a pair of symmetric keys among server and client using Diffle-Hellman algorithm.
+\item After that, the server generate corresponding public key and private key using RSA algorithm, and sends back the encrypted (with symmetric key) private key and its hMAC to the client. In the meantime, server also sends the public key of itself to client.
+\item Client checks the hMAC and saves its private key to file.
+\item Server only stores client's identity and public key, and it recognize the client next time by its identity and private key.
+\end{enumerate}
+
+\subsection{Login}
+Login is a process of authentication:
+\begin{enumerate}
+\item Client sends a login request to server with a random number.
+\item After receiving the request, server signs the random number with its private key and chooses a new random number, and then sends them back to client.
+\item Then client checks server's sign with server's public key. In the meantime, client signs the new random number with its private key and sends it back to server.
+\item Finally server checks client's sign and sends back a result (success or fail).
+\end{enumerate}
+
+\subsection{Friending}
+The process is as follows:
+\begin{enumerate}
+\item Client A sends a friend request to client B via server.
+\item Client B responses the request to client A via server.
+\item Now server sends their public key to each other.
+\end{enumerate}
+
+\subsection{Messaging}
+The process is as follows:
+\begin{enumerate}
+\item Client A generates a symmetric key, and encrypts it with B's public key.
+\item Receiving the message, B decrypts it with its private key.
+\item After that, A and B encrypt their message using the symmetric key and send it along with hMAC to each other
+\item The receiver decrypts received message and checks integrity by calculate hMAC again.
+\end{enumerate}
+
+\subsection{Group Messaging}
+It's similar to messaging and the differences are as follows:
+\begin{enumerate}
+\item Group owner generates a symmetric key, encrypts it with group members' public key and sends it to every group member.
+\item Group members decrypt received message with their private key and save the symmetric key.
+\item When a team member sends a message to group, he or she encrypts the message with shared symmetric key and calculates hMAC. And server helps to send the message and hMAC to every member in the group.
+\item Receiving a group message, group members decrypt it with symmetric key and check hMAC.
+\end{enumerate}
+
+
+\section{Analysis}
+\subsection{Reliable key distribution}
+When server distribute client's private key, it encrypts the key using AES algorithm. In the meantime, there is hMAC with the encrypted private key to ensure integrity.
+
+\subsection{Reliable authentication}
+We use signature and verification part of RSA algorithm to achieve reliable authentication.
+
+\subsection{Secure key exchange}
+The key exchange between server and client uses Diffle-Hellman algorithm.
+
+The key exchange between clients uses RSA algorithm.
+
+\subsection{Secure message sending}
+Messages sended is encrypted and decrypted using AES algorithm.
+
+\subsection{Integrity of message}
+When sending encrypted messages, we also send corresponding hMAC.
+
+\subsection{Efficiency}
+Applying RSA algorithm is not cheap, so we only use it for key exchange and authentication, and we use AES for secure message sending.
+
+
+\section{How to use}
+\subsection{Requisition}
+Before running the program, please make sure you have Node.js and MongoDB installed.
+\subsection{Usage}
+\begin{enumerate}
+\item Run a MongoDB server
+\item Run server by "node ./server/server.js"
+\item Make a copy of directory "client". Say it "client2". (Since we store keys in file, there will be conflict in one directory)
+\item Run two client by running "node ./client/client.js" and "node ./client2/client.js"
+\item Register by running "register $<username>$" (only have to register before first use)
+\item Login by running "login $<username>$"
+\item Add friend by running "friend $<friendName>$"
+\item Approve or deny other's friend request by "approve $<other'sName>$" or "deny $<other'sName>$"
+\item Show friend list by running "friendlist"
+\item Get friend's public key by running "require $<friendName>$" (only have to require it the first time you talk to your friend)
+\item Share a symmetric key with a friend to begin a talk by running "sendKey $<friendName>$" (send key every time you reconnect through socket)
+\item After that, talk to the friend by running "message $<friendName>$ $<message>$"
+\end{enumerate}
+Any problem during use of the program, please do not hesitate to contact 11300180158@fudan.edu.cn.
+
+\end{document}  
